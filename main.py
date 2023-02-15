@@ -23,7 +23,7 @@ class PredictionResult(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Hello! I'm Buuz App."}
 
 
 @app.post("/predict")
@@ -31,6 +31,8 @@ async def predict(file: UploadFile) -> PredictionResult:
     if file.content_type != "image/jpeg" and file.content_type != "image/png":
         raise HTTPException(
             status_code=415, detail="Only JPEG or PNG images are supported")
+    if file.size is not None and file.size > 1024 * 1024 * 10:
+        raise HTTPException(status_code=413, detail="File size too large")
     image = bytes_to_ndarray(await file.read())
     boxes, pad_horizontal, pad_vertical = predictor.predict(image)
     objects = []
