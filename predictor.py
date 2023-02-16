@@ -9,7 +9,7 @@ class Predictor:
         self.confidence_threshold = confidence_threshold
         self.overlap_threshold = overlap_threshold
 
-    def process_image(self, image: np.ndarray) -> tuple[np.ndarray, int, int]:
+    def process_image(self, image: np.ndarray) -> tuple[np.ndarray, int, int, int, int]:
         h, w, _ = image.shape
         resized_h, resized_w = 640, 640
         if h > w:
@@ -23,16 +23,17 @@ class Predictor:
             processed_image, pad_h, pad_h, pad_w, pad_w, cv2.BORDER_CONSTANT, value=(0, 0, 0))
         processed_image = (
             processed_image / 255.0).astype(np.float32).transpose(2, 0, 1).reshape(1, 3, 640, 640)
-        return processed_image, pad_w, pad_h
+        return processed_image, resized_w, resized_h, pad_w, pad_h
 
-    def predict(self, image: np.ndarray) -> tuple[np.ndarray, int, int]:
+    def predict(self, image: np.ndarray) -> tuple[np.ndarray, int, int, int, int]:
         input_name = self.session.get_inputs()[0].name
         output_name = self.session.get_outputs()[0].name
-        x, pad_w, pad_h = self.process_image(image)
+        h, w, _ = image.shape
+        x, w, h, pad_w, pad_h = self.process_image(image)
         outputs = self.session.run([output_name], {input_name: x})
         boxes = self.process_bounding_boxes(outputs, self.confidence_threshold)
         boxes = self.non_max_suppression(boxes, self.overlap_threshold)
-        return boxes, pad_w, pad_h
+        return boxes, w, h, pad_w, pad_h
 
     def process_bounding_boxes(self, boxes: list, confidence_threshold: float = 0.5) -> np.ndarray:
         bounding_boxes = []
