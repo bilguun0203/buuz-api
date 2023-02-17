@@ -19,8 +19,10 @@ class Predictor:
         processed_image = cv2.resize(image, (resized_w, resized_h))
         pad_h = int((640 - resized_h) / 2)
         pad_w = int((640 - resized_w) / 2)
+        odd_width = 640 - (resized_w + 2 * pad_w)
+        odd_height = 640 - (resized_h + 2 * pad_h)
         processed_image = cv2.copyMakeBorder(
-            processed_image, pad_h, pad_h, pad_w, pad_w, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            processed_image, pad_h, pad_h + odd_height, pad_w, pad_w + odd_width, cv2.BORDER_CONSTANT, value=(0, 0, 0))
         processed_image = (
             processed_image / 255.0).astype(np.float32).transpose(2, 0, 1).reshape(1, 3, 640, 640)
         return processed_image, resized_w, resized_h, pad_w, pad_h
