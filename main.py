@@ -53,6 +53,8 @@ async def predict(file: UploadFile) -> PredictionResult:
     if file.size is not None and file.size > settings.file_size_limit:
         raise HTTPException(status_code=413, detail="File size too large")
     image = bytes_to_ndarray(await file.read())
+    if image.shape[2] == 4:
+        image = image[:,:,:3]
     boxes, w, h, pad_horizontal, pad_vertical = predictor.predict(image)
     objects = []
     for box in boxes:
