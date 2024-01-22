@@ -1,4 +1,6 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+import time
+
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -25,8 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-predictor = Predictor(model_path=settings.model_path,
-                      overlap_threshold=settings.overlap_threshold, confidence_threshold=settings.confidence_threshold)
+predictor = Predictor(
+    model_path=settings.model_path,
+    overlap_threshold=settings.overlap_threshold,
+    confidence_threshold=settings.confidence_threshold,
+)
 
 
 class BoxResult(BaseModel):
@@ -49,16 +54,28 @@ async def root():
 async def predict(file: UploadFile) -> PredictionResult:
     if file.content_type != "image/jpeg" and file.content_type != "image/png":
         raise HTTPException(
-            status_code=415, detail="Only JPEG or PNG images are supported")
+            status_code=415, detail="Only JPEG or PNG images are supported"
+        )
     if file.size is not None and file.size > settings.file_size_limit:
         raise HTTPException(status_code=413, detail="File size too large")
+    start = time.time()
     image = bytes_to_ndarray(await file.read())
     if image.shape[2] == 4:
-        image = image[:,:,:3]
+        image = image[:, :, :3]
     boxes, w, h, pad_horizontal, pad_vertical = predictor.predict(image)
     objects = []
     for box in boxes:
         x1, y1, x2, y2, cnf, cls = box
-        objects.append(BoxResult(box=((x1-pad_horizontal) / w, (y1-pad_vertical) / h,
-                       (x2-pad_horizontal) / w, (y2-pad_vertical) / h), confidence=cnf))
-    return PredictionResult(count=len(objects), message=f"Ok", boxes=objects)
+        objects.append(
+            BoxResult(
+                box=(
+                    (x1 - pad_horizontal) / w,
+                    (y1 - pad_vertical) / h,
+                    (x2 - pad_horizontal) / w,
+                    (y2 - pad_vertical) / h,
+                ),
+                confidence=cnf,
+            )
+        )
+    print(f"Process took {(time.time() - start)*1000:.3f}ms")
+    return PredictionResult(count=len(objects), message="Ok", boxes=objects)
