@@ -77,5 +77,6 @@ async def predict(file: UploadFile) -> PredictionResult:
                 confidence=cnf,
             )
         )
+    print(f"Found {len(objects)} objects")
     print(f"Process took {(time.time() - start)*1000:.3f}ms")
     return PredictionResult(count=len(objects), message="Ok", boxes=objects)
