@@ -16,4 +16,4 @@ uvicorn main:app --reload
 
 ## Model
 
-Model is not currently available to the public. If you want to use your own model, you can train [YOLOv5s](https://github.com/ultralytics/yolov5) model on your own dataset and convert it to ONNX format.
+Fine-tuned the [YOLOv5s](https://github.com/ultralytics/yolov5) model for buuz recognition. You can find the trained model on [Hugging Face](https://huggingface.co/bilguun/buuz).
